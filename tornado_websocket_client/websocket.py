@@ -77,6 +77,10 @@ class WebSocket(object):
         self.port = self.url.port or ports[self.url.scheme]
         self.path = self.url.path or '/'
 
+        logging.debug(
+            "WebSocket using host (%s), port (%s) and path (%s)." % (
+                self.host, self.port, self.path))
+
         self.client_terminated = False
         self.server_terminated = False
         self._final_frame = False
