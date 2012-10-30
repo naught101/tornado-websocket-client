@@ -80,6 +80,7 @@ class WebSocket(object):
         logging.debug(
             "WebSocket using host (%s), port (%s) and path (%s)." % (
                 self.host, self.port, self.path))
+        print("you are here.")
 
         self.client_terminated = False
         self.server_terminated = False
