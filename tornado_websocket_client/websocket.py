@@ -32,6 +32,7 @@ Upgrade: websocket
 Connection: Upgrade
 Sec-Websocket-Key: %(key)s
 Sec-Websocket-Version: 13
+Cookie: %(cookie)s
 """
 
 # Magic string defined in the spec for calculating keys.
@@ -69,7 +70,7 @@ def frame(data, opcode=0x01):
 class WebSocket(object):
     """Websocket client for protocol version 13 using the Tornado IO loop."""
 
-    def __init__(self, url):
+    def __init__(self, url, cookie):
         ports = {'ws': 80, 'wss': 443}
 
         self.url = urlparse.urlparse(url)
@@ -80,7 +81,6 @@ class WebSocket(object):
         logging.debug(
             "WebSocket using host (%s), port (%s) and path (%s)." % (
                 self.host, self.port, self.path))
-        print("you are here.")
 
         self.client_terminated = False
         self.server_terminated = False
@@ -94,6 +94,8 @@ class WebSocket(object):
         self.key = base64.b64encode(os.urandom(16))
         self.stream = iostream.IOStream(socket.socket())
         self.stream.connect((self.host, self.port), self._on_connect)
+
+        self.cookie = cookie
 
     def on_open(self):
         pass
@@ -144,7 +146,17 @@ class WebSocket(object):
         self.stream.write(frame(data, opcode))
 
     def _on_connect(self):
-        request = '\r\n'.join(INIT.splitlines()) % self.__dict__ + '\r\n\r\n'
+        # TODO (lwc): This is unreasonably tricky, relying on classes (public)
+        # attributes to be substituted into the handshake. Explicit dictionary
+        # string substitution would be much clearer and less prone to obscure
+        # issues.
+        request = '\r\n'.join(INIT.splitlines()) % {
+            "path": self.path,
+            "host": self.host,
+            "port": self.port,
+            "key": self.key,
+            "cookie": self.cookie
+        } + '\r\n\r\n'
         self.stream.write(tornado.escape.utf8(request))
         self.stream.read_until('\r\n\r\n', self._on_headers)
 
@@ -292,7 +304,7 @@ class WebSocket(object):
         return wrapper
 
 
-def main(url, message='hello, world'):
+def main(url, cookie, message='hello, world'):
 
     class HelloSocket(WebSocket):
 
@@ -317,7 +329,7 @@ def main(url, message='hello, world'):
         def on_pong(self):
             print 'on_pong'
 
-    ws = HelloSocket(url)
+    ws = HelloSocket(url, cookie)
     try:
         ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
