@@ -77,6 +77,7 @@ class WebSocket(object):
         self.host = self.url.hostname
         self.port = self.url.port or ports[self.url.scheme]
         self.path = self.url.path or '/'
+        self.cookie = cookie
 
         logging.debug(
             "WebSocket using host (%s), port (%s) and path (%s)." % (
@@ -94,8 +95,6 @@ class WebSocket(object):
         self.key = base64.b64encode(os.urandom(16))
         self.stream = iostream.IOStream(socket.socket())
         self.stream.connect((self.host, self.port), self._on_connect)
-
-        self.cookie = cookie
 
     def on_open(self):
         pass
