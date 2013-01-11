@@ -32,7 +32,9 @@ Upgrade: websocket
 Connection: Upgrade
 Sec-Websocket-Key: %(key)s
 Sec-Websocket-Version: 13
-Cookie: %(cookie)s
+"""
+
+HEADER = """%(key)s: %(value)s
 """
 
 # Magic string defined in the spec for calculating keys.
@@ -70,14 +72,14 @@ def frame(data, opcode=0x01):
 class WebSocket(object):
     """Websocket client for protocol version 13 using the Tornado IO loop."""
 
-    def __init__(self, url, cookie):
+    def __init__(self, url, io_loop=None, headers=None):
         ports = {'ws': 80, 'wss': 443}
 
         self.url = urlparse.urlparse(url)
         self.host = self.url.hostname
         self.port = self.url.port or ports[self.url.scheme]
         self.path = self.url.path or '/'
-        self.cookie = cookie
+        self.headers = headers or {}
 
         logging.debug(
             "WebSocket using host (%s), port (%s) and path (%s)." % (
@@ -93,7 +95,7 @@ class WebSocket(object):
         self._waiting = None
 
         self.key = base64.b64encode(os.urandom(16))
-        self.stream = iostream.IOStream(socket.socket())
+        self.stream = iostream.IOStream(socket.socket(), io_loop=io_loop)
         self.stream.connect((self.host, self.port), self._on_connect)
 
     def on_open(self):
@@ -149,13 +151,15 @@ class WebSocket(object):
         # attributes to be substituted into the handshake. Explicit dictionary
         # string substitution would be much clearer and less prone to obscure
         # issues.
+        additional_headers = ""
+        for key, value in self.headers.items():
+            additional_headers += HEADER % {"key": key, "value": value}
         request = '\r\n'.join(INIT.splitlines()) % {
             "path": self.path,
             "host": self.host,
             "port": self.port,
             "key": self.key,
-            "cookie": self.cookie
-        } + '\r\n\r\n'
+        } + additional_headers + '\r\n\r\n'
         self.stream.write(tornado.escape.utf8(request))
         self.stream.read_until('\r\n\r\n', self._on_headers)
 
@@ -303,7 +307,7 @@ class WebSocket(object):
         return wrapper
 
 
-def main(url, cookie, message='hello, world'):
+def main(url, message='hello, world'):
 
     class HelloSocket(WebSocket):
 
@@ -328,7 +332,7 @@ def main(url, cookie, message='hello, world'):
         def on_pong(self):
             print 'on_pong'
 
-    ws = HelloSocket(url, cookie)
+    ws = HelloSocket(url)
     try:
         ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

@@ -4,11 +4,9 @@ from distutils.core import setup
 
 setup(
     name='tornado_websocket_client',
-    version='0.0.1',
+    version='0.0.3',
     description='Tornado Web Socket Client',
-    author='misc.',
-    packages=[
-        "tornado_websocket_client"
-    ],
-    requires=[],
+    author='Jeff Balogh',
+    py_modules=["tornado_websocket_client"],
+    requires=["tornado"],
 )
