@@ -34,8 +34,7 @@ Sec-Websocket-Key: %(key)s
 Sec-Websocket-Version: 13
 """
 
-HEADER = """%(key)s: %(value)s
-"""
+HEADER = """%(key)s: %(value)s"""
 
 # Magic string defined in the spec for calculating keys.
 MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
@@ -151,9 +150,10 @@ class WebSocket(object):
         # attributes to be substituted into the handshake. Explicit dictionary
         # string substitution would be much clearer and less prone to obscure
         # issues.
-        additional_headers = ""
-        for key, value in self.headers.items():
-            additional_headers += HEADER % {"key": key, "value": value}
+        additional_headers = "\n".join(
+            ["%s: %s" % (key, value) for key, value in self.headers.items()])
+        if additional_headers:
+            additional_headers = "\n" + additional_headers
         request = '\r\n'.join(INIT.splitlines()) % {
             "path": self.path,
             "host": self.host,
