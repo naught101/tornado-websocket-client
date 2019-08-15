@@ -16,12 +16,12 @@ import socket
 import struct
 import sys
 import time
-import urlparse
+from urllib.parse import urlparse
 
 import tornado.escape
 from tornado import ioloop, iostream
 from tornado.httputil import HTTPHeaders
-from tornado.util import bytes_type, b
+from tornado.util import bytes_type
 
 
 # The initial handshake over HTTP.
@@ -72,7 +72,7 @@ class WebSocket(object):
     def __init__(self, url, io_loop=None, extra_headers=None):
         ports = {'ws': 80, 'wss': 443}
 
-        self.url = urlparse.urlparse(url)
+        self.url = urlparse(url)
         self.host = self.url.hostname
         self.port = self.url.port or ports[self.url.scheme]
         self.path = self.url.path or '/'
@@ -127,13 +127,13 @@ class WebSocket(object):
         self._write_frame(True, opcode, message)
 
     def ping(self):
-        self._write_frame(True, 0x9, b(''))
+        self._write_frame(True, 0x9, '')
 
     def close(self):
         """Closes the WebSocket connection."""
         if not self.server_terminated:
             if not self.stream.closed():
-                self._write_frame(True, 0x8, b(""))
+                self._write_frame(True, 0x8, "")
             self.server_terminated = True
         if self.client_terminated:
             if self._waiting is not None:
@@ -310,11 +310,11 @@ def main(url, message='hello, world'):
 
         def on_open(self):
             self.ping()
-            print '>>', message
+            print('>>', message)
             self.write_message(message)
 
         def on_message(self, data):
-            print 'on_message:', data
+            print('on_message:', data)
             msg = raw_input('>> ')
             if msg == 'ping':
                 self.ping()
@@ -324,10 +324,10 @@ def main(url, message='hello, world'):
                 self.write_message(msg)
 
         def on_close(self):
-            print 'on_close'
+            print('on_close')
 
         def on_pong(self):
-            print 'on_pong'
+            print('on_pong')
 
     ws = HelloSocket(url)
     try:
